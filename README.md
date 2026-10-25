@@ -157,13 +157,15 @@ CI(GitHub Actions)は、`main` への push とプルリクエストで、フロ�
 │   ├── shortcut.ts         ⌘+Enter の判定(IME変換中は除く)
 │   ├── clipboard.ts        クリップボードへのコピー
 │   ├── CopyButton.tsx      コピーアイコン
-│   ├── MarkdownView.tsx    Markdown表示(生HTMLは描画しない)
+│   ├── runState.ts         実行状態(結果・エラー・実行中)の遷移
+│   ├── MarkdownView.tsx    Markdown表示(生HTML・画像・リンクは描画しない)
+│   ├── csp.test.ts         CSP設定のテスト
 │   └── *.test.ts(x)        テスト
 ├── src-tauri/              バックエンド (Rust + Tauri v2)
 │   ├── src/main.rs         コマンド登録
 │   ├── src/fm_client.rs    fm コマンドの呼び出しとエラー処理
 │   ├── src/menu.rs         日本語のメニューバー
-│   ├── tauri.conf.json     アプリ名・バンドルID・署名の設定
+│   ├── tauri.conf.json     アプリ名・バンドルID・署名・CSPの設定
 │   └── icons/              アプリアイコン
 ├── assets/icon.png         アイコンの元画像
 ├── scripts/make_icon.py    アイコン生成スクリプト
@@ -190,7 +192,21 @@ CI(GitHub Actions)は、`main` への push とプルリクエストで、フロ�
 |---|---|---|
 | `license_not_agreed` | `fm` のライセンスに未同意 | `sudo fm license` を案内するダイアログを表示 |
 | `not_found` | `fm` が見つからない | エラーメッセージを表示 |
+| `timeout` | 120秒以内に処理が終わらない | `fm` を強制終了し、中断した旨を表示 |
 | `other` | 非0終了など | 終了コードと標準エラー出力(色指定の制御文字は除去)を表示 |
+
+実行を始めた時点で前回の結果は消えるため、失敗したときに古い結果が残って、誤ってコピーされることはありません。
+
+制限時間は `src-tauri/src/fm_client.rs` の `FM_TIMEOUT` で変更できます。
+
+### 外部への通信の遮断
+
+文章を外部に送らないという約束を守るため、画面側でも外部への通信を防いでいます。
+
+- **CSP(Content Security Policy)**: `src-tauri/tauri.conf.json` の `app.security.csp` で、読み込みと通信をアプリ自身に限定しています。許可しているのは、バックエンドとの通信(`ipc:` と `http://ipc.localhost`)だけです。開発モード用の `devCsp` では、Vite の画面自動更新のために `ws://localhost:1420` も許可しています。
+- **Markdown表示**: 結果に含まれる画像は読み込まず、「[画像: 代替テキスト]」と表示します。リンクは押せない文字として「リンク文字 (URL)」の形で表示するので、アプリの画面が外部サイトに切り替わることはありません。生のHTMLも描画しません。
+
+CSP の設定値は `src/csp.test.ts` で、外部ホストを許可していないことをテストしています。CSP を変更するときは、このテストも通ることを確認してください。
 
 ### 注意点
 
@@ -219,4 +235,5 @@ Claude や Cursor などの AI エージェントに開発を依頼する際は�
 | 開いたときに「開発元を確認できません」と出る | アドホック署名のためです。[インストール](#インストール)の手順で開いてください |
 | `make dev` で「port 1420 is already in use」 | 別の開発サーバが動いています。そのプロセスを終了してください |
 | ログに `TSM AdjustCapsLockLEDForKeyTransitionHandling` などが出る | macOS の日本語入力まわりの既知のログで、動作には影響しません |
+| 「120秒以内に終わらなかったため中断しました」 | 入力が長すぎる可能性があります。文章を分けて実行してください |
 | 初回の `make app` / `make dmg` が遅い | Rust の依存をコンパイルしているためです。2回目以降は速くなります |
