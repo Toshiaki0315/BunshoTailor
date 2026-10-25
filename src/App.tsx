@@ -65,8 +65,6 @@ function App() {
 
   return (
     <div className="app">
-      <header className="app-header">文章仕立屋</header>
-
       <nav className="tabs" role="tablist" aria-label="処理の種類">
         {CATEGORIES.map((c) => (
           <button
@@ -112,12 +110,6 @@ function App() {
             onKeyDown={handleKeyDown}
             placeholder="処理したい文章を入力または貼り付けてください"
           />
-          <div className="actions">
-            <button type="button" className="primary" onClick={() => void run()} disabled={!canRun(input, running)}>
-              {running ? '処理中...' : `実行: ${selected?.label ?? ''}`}
-            </button>
-            <span className="hint">⌘+Enterでも実行できます</span>
-          </div>
         </section>
 
         <section className="pane">
@@ -137,6 +129,13 @@ function App() {
           </div>
         </section>
       </main>
+
+      <div className="actions">
+        <span className="hint">⌘+Enterでも実行できます</span>
+        <button type="button" className="primary" onClick={() => void run()} disabled={!canRun(input, running)}>
+          {running ? '処理中...' : '実行'}
+        </button>
+      </div>
 
       {showLicenseDialog && (
         <div role="dialog" aria-modal="true" aria-labelledby="license-title" style={overlayStyle}>
