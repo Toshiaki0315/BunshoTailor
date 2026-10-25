@@ -9,6 +9,10 @@ describe('parseFmError', () => {
     })
   })
 
+  it('parses a timeout error', () => {
+    expect(parseFmError({ kind: 'timeout', message: 't' })).toEqual({ kind: 'timeout', message: 't' })
+  })
+
   it('falls back to other for a plain string', () => {
     expect(parseFmError('boom')).toEqual({ kind: 'other', message: 'boom' })
   })

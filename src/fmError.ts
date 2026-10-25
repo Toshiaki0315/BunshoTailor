@@ -1,4 +1,4 @@
-export type FmErrorKind = 'license_not_agreed' | 'not_found' | 'other'
+export type FmErrorKind = 'license_not_agreed' | 'not_found' | 'timeout' | 'other'
 
 export interface FmError {
   kind: FmErrorKind
@@ -8,7 +8,7 @@ export interface FmError {
 /** ライセンス同意のためにユーザー自身がターミナルで実行するコマンド */
 export const LICENSE_COMMAND = 'sudo fm license'
 
-const KINDS: readonly FmErrorKind[] = ['license_not_agreed', 'not_found', 'other']
+const KINDS: readonly FmErrorKind[] = ['license_not_agreed', 'not_found', 'timeout', 'other']
 
 function isKind(value: unknown): value is FmErrorKind {
   return KINDS.includes(value as FmErrorKind)

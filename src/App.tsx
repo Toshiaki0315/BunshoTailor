@@ -1,8 +1,9 @@
-import { useState } from 'react'
+import { useReducer, useState } from 'react'
 import { invoke } from '@tauri-apps/api/core'
 import CopyButton from './CopyButton'
 import MarkdownView from './MarkdownView'
 import { LICENSE_COMMAND, parseFmError } from './fmError'
+import { initialRunState, runReducer } from './runState'
 import { canRun, shouldRunOnKey } from './shortcut'
 import { CATEGORIES, findCategory, findOption, firstOptionId } from './tasks'
 
@@ -10,9 +11,7 @@ function App() {
   const [categoryId, setCategoryId] = useState(CATEGORIES[0].id)
   const [optionId, setOptionId] = useState(firstOptionId(CATEGORIES[0].id))
   const [input, setInput] = useState('')
-  const [output, setOutput] = useState('')
-  const [errorMessage, setErrorMessage] = useState('')
-  const [running, setRunning] = useState(false)
+  const [{ output, errorMessage, running }, dispatch] = useReducer(runReducer, initialRunState)
   const [renderMarkdown, setRenderMarkdown] = useState(false)
   const [showLicenseDialog, setShowLicenseDialog] = useState(false)
 
@@ -26,21 +25,18 @@ function App() {
 
   async function run() {
     if (!selected || !canRun(input, running)) return
-    setRunning(true)
-    setErrorMessage('')
+    dispatch({ type: 'start' })
     try {
       const res: string = await invoke('run_fm_task', {
         instructions: selected.instructions,
         text: input,
       })
-      setOutput(res)
+      dispatch({ type: 'success', output: res })
     } catch (err) {
       console.error(err)
       const error = parseFmError(err)
       setShowLicenseDialog(error.kind === 'license_not_agreed')
-      setErrorMessage(error.message)
-    } finally {
-      setRunning(false)
+      dispatch({ type: 'failure', message: error.message })
     }
   }
 
@@ -59,8 +55,7 @@ function App() {
 
   function clearAll() {
     setInput('')
-    setOutput('')
-    setErrorMessage('')
+    dispatch({ type: 'clear' })
   }
 
   return (

@@ -32,6 +32,31 @@ describe('MarkdownView', () => {
     expect(html).not.toContain('<script>')
   })
 
+  it('does not load remote images (shows alt text instead)', () => {
+    const html = render('![ロゴ](https://example.com/t.png)')
+    expect(html).not.toContain('<img')
+    expect(html).not.toContain('https://example.com/t.png')
+    expect(html).toContain('ロゴ')
+  })
+
+  it('does not render clickable links (keeps the text and URL)', () => {
+    const html = render('[サイト](https://example.com/a)')
+    expect(html).not.toContain('<a')
+    expect(html).toContain('サイト')
+    expect(html).toContain('https://example.com/a')
+  })
+
+  it('does not render bare URLs (GFM autolinks) as links', () => {
+    const html = render('詳しくは https://example.com/b を参照')
+    expect(html).not.toContain('<a')
+    expect(html).toContain('https://example.com/b')
+  })
+
+  it('shows the URL only once when the link text is the URL itself', () => {
+    const html = render('https://example.com/c')
+    expect(html.split('https://example.com/c').length - 1).toBe(1)
+  })
+
   it('renders nothing for empty text', () => {
     expect(render('')).toBe('<div class="markdown"></div>')
   })
